@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IELTS Vocab Master</title>
+  <meta name="description" content="Master 600 essential IELTS vocabulary words across 20 topics">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ── HOME ─────────────────────────────────── -->
+  <div id="screen-home" class="screen">
+    <div class="home-header">
+      <h1>IELTS Vocab <span>Master</span></h1>
+      <p>Learn 600 essential words. Pass the IELTS test.</p>
+      <div class="home-stats">
+        <div class="stat-item">
+          <span class="stat-number">20</span>
+          <span class="stat-label">Topics</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-number">600</span>
+          <span class="stat-label">Words</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-number">30</span>
+          <span class="stat-label">Per Topic</span>
+        </div>
+      </div>
+    </div>
+    <div class="topics-grid" id="topics-grid"></div>
+  </div>
+
+  <!-- ── STUDY ─────────────────────────────────── -->
+  <div id="screen-study" class="screen">
+    <div class="study-header">
+      <button class="back-btn" onclick="goHome()" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <div class="study-header-info">
+        <h2 id="study-topic-name"></h2>
+        <p id="study-topic-desc"></p>
+      </div>
+      <div class="study-count" id="study-word-count"></div>
+    </div>
+    <div class="words-list" id="words-list"></div>
+    <div class="bottom-action">
+      <button class="btn-primary btn-lg" onclick="startTest()">
+        Start Test
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── TEST ──────────────────────────────────── -->
+  <div id="screen-test" class="screen">
+    <div class="test-header">
+      <button class="back-btn-sm" onclick="exitTest()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+        Exit
+      </button>
+      <div class="test-score-display">
+        <span class="score-correct">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+          </svg>
+          <span id="correct-count">0</span>
+        </span>
+        <span class="score-wrong">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
+          <span id="wrong-count">0</span>
+        </span>
+      </div>
+      <div class="test-progress-text" id="test-progress-text">1/30</div>
+    </div>
+    <div class="progress-bar-container">
+      <div class="progress-bar" id="progress-bar" style="width:0%"></div>
+    </div>
+    <div class="test-content">
+      <div class="question-card">
+        <p class="question-label">Which word matches this definition?</p>
+        <p class="question-definition" id="question-definition"></p>
+      </div>
+      <div class="options-list" id="options-list"></div>
+      <button class="btn-primary btn-next" id="next-btn" onclick="nextQuestion()" style="display:none">
+        Next Question
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── RESULTS ───────────────────────────────── -->
+  <div id="screen-results" class="screen">
+    <div class="results-header">
+      <button class="back-btn" onclick="goHome()" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <h2>Test Results</h2>
+    </div>
+    <div class="results-content">
+      <div class="score-circle-container">
+        <div class="score-circle" id="score-circle">
+          <span class="score-percent" id="score-percent">0%</span>
+          <span class="score-grade" id="score-grade">—</span>
+        </div>
+      </div>
+      <div class="results-stats">
+        <div class="result-stat correct-stat">
+          <div class="result-stat-number" id="result-correct">0</div>
+          <div class="result-stat-label">Correct</div>
+        </div>
+        <div class="result-stat wrong-stat">
+          <div class="result-stat-number" id="result-wrong">0</div>
+          <div class="result-stat-label">Incorrect</div>
+        </div>
+      </div>
+      <div class="results-message" id="results-message"></div>
+      <div class="mistakes-section" id="mistakes-section">
+        <h3>Mistakes to Review</h3>
+        <div class="mistakes-list" id="mistakes-list"></div>
+      </div>
+      <div class="results-actions">
+        <button class="btn-primary" onclick="startTest()">Try Again</button>
+        <button class="btn-secondary" onclick="goHome()">All Topics</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
