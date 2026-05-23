@@ -54,6 +54,7 @@ function openTopic(topicId) {
       <div class="word-content">
         <div class="word-term">${item.word}</div>
         <div class="word-definition">${item.definition}</div>
+        ${ruTranslations[item.word] ? `<div class="word-ru">🇷🇺 ${ruTranslations[item.word]}</div>` : ''}
       </div>
     </div>
   `).join('');
@@ -101,6 +102,8 @@ function renderQuestion() {
   document.getElementById('progress-bar').style.width = progressPct + '%';
 
   document.getElementById('question-definition').textContent = question.definition;
+  const ruEl = document.getElementById('question-ru');
+  if (ruEl) ruEl.textContent = ruTranslations[question.word] ? `🇷🇺 ${ruTranslations[question.word]}` : '';
 
   const wrongOptions = topic.words
     .filter(w => w.word !== question.word)
@@ -160,6 +163,7 @@ function selectAnswer(selectedWord, btnEl, correctWord) {
     state.mistakes.push({
       word: question.word,
       definition: question.definition,
+      ru: ruTranslations[question.word] || '',
       chosen: selectedWord
     });
   }
@@ -224,7 +228,8 @@ function showResults() {
       <div class="mistake-card">
         <div class="mistake-word">${m.word}</div>
         <div class="mistake-definition">${m.definition}</div>
-        <div class="mistake-chosen">Your answer: <span>${m.chosen}</span></div>
+        ${m.ru ? `<div class="mistake-ru">🇷🇺 ${m.ru}</div>` : ''}
+        <div class="mistake-chosen">Ваш ответ: <span>${m.chosen}</span></div>
       </div>
     `).join('');
   }
