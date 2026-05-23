@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IELTS Vocab Master</title>
-  <meta name="description" content="Master 600 essential IELTS vocabulary words across 20 topics">
+  <meta name="description" content="Master 990 essential IELTS vocabulary words across 33 topics">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -16,15 +16,15 @@
   <div id="screen-home" class="screen">
     <div class="home-header">
       <h1>IELTS Vocab <span>Master</span></h1>
-      <p>Learn 600 essential words. Pass the IELTS test.</p>
+      <p>Learn 990 essential words. Pass the IELTS test.</p>
       <div class="home-stats">
         <div class="stat-item">
-          <span class="stat-number">20</span>
+          <span class="stat-number">33</span>
           <span class="stat-label">Topics</span>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item">
-          <span class="stat-number">600</span>
+          <span class="stat-number">990</span>
           <span class="stat-label">Words</span>
         </div>
         <div class="stat-divider"></div>
@@ -51,14 +51,76 @@
       </div>
       <div class="study-count" id="study-word-count"></div>
     </div>
-    <div class="words-list" id="words-list"></div>
-    <div class="bottom-action">
-      <button class="btn-primary btn-lg" onclick="startTest()">
-        Start Test
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
-        </svg>
-      </button>
+    <div class="mode-tabs">
+      <button class="mode-tab active" id="tab-study"    onclick="switchMode('study')">📖 Study</button>
+      <button class="mode-tab"        id="tab-cards"    onclick="switchMode('cards')">🃏 Cards</button>
+      <button class="mode-tab"        id="tab-match"    onclick="switchMode('match')">🔗 Match</button>
+      <button class="mode-tab"        id="tab-test"     onclick="startTest()">📝 Test</button>
+    </div>
+
+    <!-- Study mode -->
+    <div id="mode-study">
+      <div class="words-list" id="words-list"></div>
+    </div>
+
+    <!-- Flashcard mode -->
+    <div id="mode-cards" style="display:none">
+      <div class="flashcard-wrap">
+        <div class="fc-progress-row">
+          <span class="fc-known" id="fc-known">✓ 0 known</span>
+          <span class="fc-counter" id="fc-counter">1 / 30</span>
+          <span class="fc-left"   id="fc-left">30 left</span>
+        </div>
+        <div class="fc-progress-bar-bg">
+          <div class="fc-progress-bar" id="fc-progress-bar" style="width:0%"></div>
+        </div>
+        <div class="flashcard-container" onclick="flipCard()">
+          <div class="flashcard" id="flashcard">
+            <div class="fc-front">
+              <div class="fc-hint">tap to flip</div>
+              <div class="fc-word" id="fc-word"></div>
+            </div>
+            <div class="fc-back">
+              <div class="fc-word-sm" id="fc-word-sm"></div>
+              <div class="fc-def"  id="fc-def"></div>
+              <div class="fc-ru"   id="fc-ru"></div>
+            </div>
+          </div>
+        </div>
+        <div class="fc-buttons" id="fc-buttons" style="display:none">
+          <button class="fc-btn fc-btn-no"  onclick="cardAction(false)">✗ Don't know</button>
+          <button class="fc-btn fc-btn-yes" onclick="cardAction(true)">✓ Know it!</button>
+        </div>
+        <div class="fc-done" id="fc-done" style="display:none">
+          <div class="fc-done-icon">🎉</div>
+          <div class="fc-done-title">Round complete!</div>
+          <div class="fc-done-sub" id="fc-done-sub"></div>
+          <div class="fc-done-actions">
+            <button class="btn-primary" id="fc-review-btn" onclick="startCards(true)">Review unknowns</button>
+            <button class="btn-secondary" onclick="startCards(false)">Restart all</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Match mode -->
+    <div id="mode-match" style="display:none">
+      <div class="match-wrap">
+        <div class="match-header-row">
+          <span class="match-round" id="match-round">Round 1/6</span>
+          <span class="match-score-txt" id="match-score-txt">0 matched</span>
+        </div>
+        <div class="match-progress-bg">
+          <div class="match-progress-bar" id="match-progress-bar" style="width:0%"></div>
+        </div>
+        <p class="match-instruction">Tap a word, then tap its definition</p>
+        <div class="match-grid" id="match-grid"></div>
+        <div class="match-done" id="match-done" style="display:none">
+          <div class="match-done-icon">🏆</div>
+          <div class="match-done-title">All words matched!</div>
+          <button class="btn-primary" onclick="startMatch()">Play again</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -73,15 +135,11 @@
       </button>
       <div class="test-score-display">
         <span class="score-correct">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
           <span id="correct-count">0</span>
         </span>
         <span class="score-wrong">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
           <span id="wrong-count">0</span>
         </span>
       </div>
@@ -120,7 +178,7 @@
       <div class="score-circle-container">
         <div class="score-circle" id="score-circle">
           <span class="score-percent" id="score-percent">0%</span>
-          <span class="score-grade" id="score-grade">—</span>
+          <span class="score-grade"   id="score-grade">—</span>
         </div>
       </div>
       <div class="results-stats">
@@ -139,7 +197,7 @@
         <div class="mistakes-list" id="mistakes-list"></div>
       </div>
       <div class="results-actions">
-        <button class="btn-primary" onclick="startTest()">Try Again</button>
+        <button class="btn-primary"   onclick="startTest()">Try Again</button>
         <button class="btn-secondary" onclick="goHome()">All Topics</button>
       </div>
     </div>
