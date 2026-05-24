@@ -20,13 +20,25 @@ const state = {
   matchRoundIndex: 0,
   matchRoundSize: 5,
   matchSelected: null,
-  matchMatched: 0
+  matchMatched: 0,
+  // Write
+  wrDeck: [],
+  wrUnknown: [],
+  wrIndex: 0,
+  wrCorrect: 0,
+  wrWrong: 0,
+  wrAnswered: false
 };
 
 // ── Init ───────────────────────────────────────────────────────────────────
 function init() {
   renderTopics();
   showScreen('home');
+
+  // Register service worker for PWA
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
 }
 
 function renderTopics() {
@@ -66,7 +78,7 @@ function goHome() { showScreen('home'); }
 // ── Mode Switching ─────────────────────────────────────────────────────────
 function switchMode(mode) {
   state.currentMode = mode;
-  ['study','cards','match'].forEach(m => {
+  ['study','cards','match','write'].forEach(m => {
     document.getElementById('mode-' + m).style.display = m === mode ? 'block' : 'none';
     const tab = document.getElementById('tab-' + m);
     if (tab) tab.classList.toggle('active', m === mode);
@@ -76,6 +88,7 @@ function switchMode(mode) {
   if (mode === 'study') renderWordList();
   if (mode === 'cards') startCards(false);
   if (mode === 'match') startMatch();
+  if (mode === 'write') startWrite(false);
 }
 
 // ── Study Mode ─────────────────────────────────────────────────────────────
@@ -107,7 +120,6 @@ function startCards(reviewOnly) {
   state.fcFlipped = false;
 
   document.getElementById('fc-done').style.display = 'none';
-  document.getElementById('flashcard-container') && (document.getElementById('flashcard-container').style.display = 'block');
   showFcCard();
 }
 
@@ -172,6 +184,26 @@ function showFcDone() {
   reviewBtn.style.display = unknown > 0 ? 'flex' : 'none';
 }
 
+// ── Pronunciation ──────────────────────────────────────────────────────────
+function speakWord() {
+  if (!window.speechSynthesis) return;
+  const card = state.fcDeck[state.fcIndex];
+  if (!card) return;
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(card.word);
+  utt.lang = 'en-US';
+  utt.rate = 0.85;
+  utt.pitch = 1;
+  window.speechSynthesis.speak(utt);
+
+  // Visual feedback
+  const btn = document.getElementById('fc-speak-btn');
+  if (btn) {
+    btn.classList.add('speaking');
+    utt.onend = () => btn.classList.remove('speaking');
+  }
+}
+
 // ── Match Mode ─────────────────────────────────────────────────────────────
 function startMatch() {
   state.matchWords = shuffleArray([...state.currentTopic.words]);
@@ -218,7 +250,6 @@ function matchClick(el, type, word) {
     return;
   }
 
-  // Second click — check if same type (deselect) or pair
   if (state.matchSelected.el === el) {
     el.classList.remove('selected');
     state.matchSelected = null;
@@ -229,7 +260,6 @@ function matchClick(el, type, word) {
   state.matchSelected = null;
 
   if (prev.word === word) {
-    // Correct!
     prev.el.classList.remove('selected');
     prev.el.classList.add('matched');
     el.classList.add('matched');
@@ -238,14 +268,12 @@ function matchClick(el, type, word) {
     document.getElementById('match-progress-bar').style.width =
       (state.matchMatched / state.matchWords.length * 100) + '%';
 
-    // Check if round complete
     const allMatched = document.querySelectorAll('.match-item:not(.matched)').length === 0;
     if (allMatched) {
       state.matchRoundIndex++;
       setTimeout(() => renderMatchRound(), 500);
     }
   } else {
-    // Wrong
     prev.el.classList.remove('selected');
     prev.el.classList.add('wrong-flash');
     el.classList.add('wrong-flash');
@@ -263,6 +291,117 @@ function showMatchDone() {
 
 function escQ(str) {
   return str.replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+}
+
+// ── Write Mode ─────────────────────────────────────────────────────────────
+function startWrite(reviewOnly) {
+  const topic = state.currentTopic;
+  state.wrDeck = reviewOnly && state.wrUnknown.length
+    ? shuffleArray([...state.wrUnknown])
+    : shuffleArray([...topic.words]);
+  state.wrUnknown = [];
+  state.wrIndex = 0;
+  state.wrCorrect = 0;
+  state.wrWrong = 0;
+  state.wrAnswered = false;
+
+  document.getElementById('write-done').style.display = 'none';
+  document.getElementById('write-card').style.display = 'block';
+  showWriteCard();
+}
+
+function showWriteCard() {
+  const deck = state.wrDeck;
+  if (state.wrIndex >= deck.length) { showWriteDone(); return; }
+
+  const card = deck[state.wrIndex];
+  const total = deck.length;
+  state.wrAnswered = false;
+
+  document.getElementById('write-counter').textContent = `${state.wrIndex + 1} / ${total}`;
+  document.getElementById('write-progress-bar').style.width = (state.wrIndex / total * 100) + '%';
+  document.getElementById('write-correct-stat').textContent = `✓ ${state.wrCorrect}`;
+  document.getElementById('write-wrong-stat').textContent = `✗ ${state.wrWrong}`;
+
+  const ru = ruTranslations[card.word] || '';
+  document.getElementById('write-ru-text').textContent = ru || card.definition;
+  const hintEl = document.getElementById('write-hint-def');
+  hintEl.textContent = ru ? card.definition : '';
+  hintEl.style.display = ru ? 'block' : 'none';
+
+  const input = document.getElementById('write-input');
+  input.value = '';
+  input.disabled = false;
+
+  document.getElementById('write-feedback').style.display = 'none';
+  document.getElementById('write-next-btn').style.display = 'none';
+
+  // Auto-focus with a short delay for iOS keyboard
+  setTimeout(() => input.focus(), 120);
+}
+
+function checkWrite() {
+  if (state.wrAnswered) { nextWrite(); return; }
+
+  const card = state.wrDeck[state.wrIndex];
+  const input = document.getElementById('write-input');
+  const typed = input.value.trim();
+  if (!typed) return;
+
+  state.wrAnswered = true;
+  input.disabled = true;
+
+  const correct = card.word.trim();
+  const isCorrect = typed.toLowerCase() === correct.toLowerCase();
+
+  const fb = document.getElementById('write-feedback');
+  fb.style.display = 'block';
+  if (isCorrect) {
+    state.wrCorrect++;
+    fb.className = 'write-feedback write-fb-ok';
+    fb.textContent = '✓ Correct!';
+  } else {
+    state.wrWrong++;
+    state.wrUnknown.push(card);
+    fb.className = 'write-feedback write-fb-err';
+    fb.innerHTML = `✗ The answer is: <strong>${correct}</strong>`;
+  }
+
+  document.getElementById('write-correct-stat').textContent = `✓ ${state.wrCorrect}`;
+  document.getElementById('write-wrong-stat').textContent = `✗ ${state.wrWrong}`;
+
+  const isLast = state.wrIndex === state.wrDeck.length - 1;
+  const nextBtn = document.getElementById('write-next-btn');
+  nextBtn.textContent = isLast ? 'See results →' : 'Next →';
+  nextBtn.style.display = 'block';
+}
+
+function nextWrite() {
+  state.wrIndex++;
+  if (state.wrIndex >= state.wrDeck.length) {
+    showWriteDone();
+  } else {
+    showWriteCard();
+  }
+}
+
+function showWriteDone() {
+  document.getElementById('write-card').style.display = 'none';
+  document.getElementById('write-done').style.display = 'block';
+
+  const total = state.wrDeck.length;
+  const correct = state.wrCorrect;
+  const pct = Math.round(correct / total * 100);
+  document.getElementById('write-done-title').textContent = `${pct}% — ${correct} / ${total} correct`;
+
+  const unknown = state.wrUnknown.length;
+  document.getElementById('write-done-sub').textContent = unknown > 0
+    ? `${unknown} word${unknown !== 1 ? 's' : ''} need more practice.`
+    : 'Perfect! You spelled everything correctly! 🎉';
+
+  // Hide "Review mistakes" if no mistakes
+  const reviewBtn = document.querySelector('#mode-write .write-done-actions .btn-primary');
+  if (reviewBtn) reviewBtn.style.display = unknown > 0 ? 'inline-flex' : 'none';
 }
 
 // ── Test Mode ──────────────────────────────────────────────────────────────
@@ -313,9 +452,7 @@ function renderQuestion() {
   const nextBtn = document.getElementById('next-btn');
   nextBtn.style.display = 'none';
   const isLast = state.currentQuestionIndex === total - 1;
-  nextBtn.innerHTML = (isLast
-    ? 'See Results'
-    : 'Next Question') +
+  nextBtn.innerHTML = (isLast ? 'See Results' : 'Next Question') +
     ' <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>';
 }
 
@@ -389,7 +526,7 @@ function showResults() {
         <div class="mistake-word">${m.word}</div>
         <div class="mistake-definition">${m.definition}</div>
         ${m.ru ? `<div class="mistake-ru">🇷🇺 ${m.ru}</div>` : ''}
-        <div class="mistake-chosen">Ваш ответ: <span>${m.chosen}</span></div>
+        <div class="mistake-chosen">Your answer: <span>${m.chosen}</span></div>
       </div>
     `).join('');
   }

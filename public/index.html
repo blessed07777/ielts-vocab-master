@@ -2,9 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>IELTS Vocab Master</title>
   <meta name="description" content="Master 990 essential IELTS vocabulary words across 33 topics">
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="IELTS Vocab">
+  <link rel="apple-touch-icon" href="/icons/icon-180.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152.png">
+  <link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-167.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -52,10 +65,11 @@
       <div class="study-count" id="study-word-count"></div>
     </div>
     <div class="mode-tabs">
-      <button class="mode-tab active" id="tab-study"    onclick="switchMode('study')">📖 Study</button>
-      <button class="mode-tab"        id="tab-cards"    onclick="switchMode('cards')">🃏 Cards</button>
-      <button class="mode-tab"        id="tab-match"    onclick="switchMode('match')">🔗 Match</button>
-      <button class="mode-tab"        id="tab-test"     onclick="startTest()">📝 Test</button>
+      <button class="mode-tab active" id="tab-study" onclick="switchMode('study')">📖 Study</button>
+      <button class="mode-tab"        id="tab-cards" onclick="switchMode('cards')">🃏 Cards</button>
+      <button class="mode-tab"        id="tab-match" onclick="switchMode('match')">🔗 Match</button>
+      <button class="mode-tab"        id="tab-write" onclick="switchMode('write')">✏️ Write</button>
+      <button class="mode-tab"        id="tab-test"  onclick="startTest()">📝 Test</button>
     </div>
 
     <!-- Study mode -->
@@ -79,6 +93,9 @@
             <div class="fc-front">
               <div class="fc-hint">tap to flip</div>
               <div class="fc-word" id="fc-word"></div>
+              <button class="fc-speak-btn" id="fc-speak-btn" onclick="event.stopPropagation(); speakWord()" aria-label="Pronounce">
+                🔊
+              </button>
             </div>
             <div class="fc-back">
               <div class="fc-word-sm" id="fc-word-sm"></div>
@@ -119,6 +136,43 @@
           <div class="match-done-icon">🏆</div>
           <div class="match-done-title">All words matched!</div>
           <button class="btn-primary" onclick="startMatch()">Play again</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Write mode -->
+    <div id="mode-write" style="display:none">
+      <div class="write-wrap">
+        <div class="write-progress-row">
+          <span class="write-stat" id="write-correct-stat">✓ 0</span>
+          <span class="write-counter" id="write-counter">1 / 30</span>
+          <span class="write-stat write-stat-err" id="write-wrong-stat">✗ 0</span>
+        </div>
+        <div class="write-progress-bg">
+          <div class="write-progress-bar" id="write-progress-bar" style="width:0%"></div>
+        </div>
+        <div class="write-card" id="write-card">
+          <div class="write-label">Type the English word:</div>
+          <div class="write-ru-text" id="write-ru-text"></div>
+          <div class="write-hint-def" id="write-hint-def"></div>
+          <div class="write-input-row">
+            <input type="text" class="write-input" id="write-input"
+              placeholder="Type the word…"
+              autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
+              onkeydown="if(event.key==='Enter') checkWrite()">
+            <button class="write-submit-btn" onclick="checkWrite()">→</button>
+          </div>
+          <div class="write-feedback" id="write-feedback" style="display:none"></div>
+          <button class="write-next-btn" id="write-next-btn" onclick="nextWrite()" style="display:none">Next →</button>
+        </div>
+        <div class="write-done" id="write-done" style="display:none">
+          <div class="write-done-icon">✏️</div>
+          <div class="write-done-title" id="write-done-title">Done!</div>
+          <div class="write-done-sub" id="write-done-sub"></div>
+          <div class="write-done-actions">
+            <button class="btn-primary" onclick="startWrite(true)">Review mistakes</button>
+            <button class="btn-secondary" onclick="startWrite(false)">Restart all</button>
+          </div>
         </div>
       </div>
     </div>
